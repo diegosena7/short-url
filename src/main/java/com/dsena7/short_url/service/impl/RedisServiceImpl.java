@@ -25,7 +25,7 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public Optional<String> getShortUrlCache(@Valid UrlRequestDTO keyRedis) {
         try {
-            String key = keyRedis.getUrl();
+            String key = keyRedis.url();
             return Optional.ofNullable(redisTemplate.opsForValue().get(key))
                     .map(Object::toString)
                     .map(value -> {
@@ -35,7 +35,7 @@ public class RedisServiceImpl implements RedisService {
 
         } catch (Exception e) {
             log.error("Erro ao buscar valor no Redis para a chave: {}. Erro: {}",
-                    keyRedis.getUrl(), e.getMessage());
+                    keyRedis.url(), e.getMessage());
             return Optional.empty();
         }
     }
@@ -48,13 +48,13 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public void saveShortUrlCache(@Valid UrlRequestDTO key, String value, Duration duration) {
         try {
-            String redisKey = key.getUrl();
+            String redisKey = key.url();
             redisTemplate.opsForValue().set(redisKey, value, duration);
             log.info("URL salva no Redis - chave: {}, valor: {}, duração: {}",
                     redisKey, value, duration);
         } catch (Exception e) {
             log.error("Erro ao salvar no Redis - chave: {}, valor: {}. Erro: {}",
-                    key.getUrl(), value, e.getMessage());
+                    key.url(), value, e.getMessage());
         }
     }
 

@@ -23,31 +23,30 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         // Gera a URL curta
         String shortUrl = generateShortUrl(originalUrl);
 
-        UrlRequestDTO shortUrlDTO = new UrlRequestDTO();
-        shortUrlDTO.setUrl(shortUrl);
+        UrlRequestDTO shortUrlDTO = new UrlRequestDTO(shortUrl);
 
         // Verifica se já existe no cache usando a URL curta como chave
         return redisServiceImpl.getShortUrlCache(shortUrlDTO)
                 .orElseGet(() -> {
                     // Salva no MongoDB
                     ShortUrlEntity entity = ShortUrlEntity.builder()
-                            .largeUrl(originalUrl.getUrl())
+                            .largeUrl(originalUrl.url())
                             .shortUrl(shortUrl)
                             .build();
                     repository.save(entity);
 
                     // Salva no Redis usando a URL curta como chave e a URL original como valor
-                    redisServiceImpl.saveShortUrlCache(shortUrlDTO, originalUrl.getUrl());
+                    redisServiceImpl.saveShortUrlCache(shortUrlDTO, originalUrl.url());
 
                     log.info("Nova URL processada - Original: {}, Encurtada: {}",
-                            originalUrl.getUrl(), shortUrl);
-                    return originalUrl.getUrl();
+                            originalUrl.url(), shortUrl);
+                    return originalUrl.url();
                 });
     }
 
 
     public String generateShortUrl(UrlRequestDTO url) {
-        String originalUrl = url.getUrl();
+        String originalUrl = url.url();
         String prefix = originalUrl.length() > 10 ? originalUrl.substring(0, 10) : originalUrl;
         return prefix + "dsena7";
     }
