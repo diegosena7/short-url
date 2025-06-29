@@ -1,31 +1,83 @@
-# docker-compose.yml
+# Versão do Docker Compose - usando 3.8 para suportar recursos mais recentes
+version: '3.8'
+
+# Definição dos serviços da aplicação
 services:
+  # Serviço principal da aplicação Spring Boot
   app:
-    build: .
+    build: .  # Constrói a imagem usando o Dockerfile no diretório atual
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Mapeia a porta 8080 do container para a porta 8080 do host
     environment:
+      # Configurações de conexão com MongoDB e Redis
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/shorturl
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
     depends_on:
-      - mongodb
-      - redis
+      # Garante que MongoDB e Redis estejam saudáveis antes de iniciar a aplicação
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shorturl-network  # Conecta o serviço à rede dedicada
+    deploy:
+      resources:
+        limits:
+          cpus: '1'      # Limita o uso de CPU a 1 core
+          memory: 512M   # Limita o uso de memória a 512MB
+    restart: unless-stopped  # Reinicia o container automaticamente, exceto se parado manualmente
 
+  # Serviço do MongoDB
   mongodb:
-    image: mongo:latest
+    image: mongo:6.0  # Usa uma versão específica do MongoDB
     ports:
-      - "27017:27017"
+      - "27017:27017"  # Mapeia a porta do MongoDB
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data:/data/db  # Volume persistente para dados do MongoDB
+    networks:
+      - shorturl-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'    # Limita o uso de CPU a 50%
+          memory: 256M   # Limita o uso de memória a 256MB
+    healthcheck:
+      # Verifica se o MongoDB está respondendo
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s      # Intervalo entre verificações
+      timeout: 5s        # Tempo limite para cada verificação
+      retries: 3         # Número de tentativas
+    restart: unless-stopped
 
+  # Serviço do Redis
   redis:
-    image: redis:latest
+    image: redis:7.0-alpine  # Usa versão Alpine do Redis para imagem mais leve
     ports:
-      - "6379:6379"
+      - "6379:6379"  # Mapeia a porta do Redis
     volumes:
-      - redis_data:/data
+      - redis_data:/data  # Volume persistente para dados do Redis
+    networks:
+      - shorturl-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'    # Limita o uso de CPU a 30%
+          memory: 128M   # Limita o uso de memória a 128MB
+    healthcheck:
+      # Verifica se o Redis está respondendo
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
+# Definição da rede dedicada para comunicação entre os serviços
+networks:
+  shorturl-network:
+    driver: bridge  # Usa o driver bridge padrão do Docker
+
+# Definição dos volumes persistentes
 volumes:
-  mongodb_data:
-  redis_data:
+  mongodb_data:  # Volume para dados do MongoDB
+  redis_data:    # Volume para dados do Redis

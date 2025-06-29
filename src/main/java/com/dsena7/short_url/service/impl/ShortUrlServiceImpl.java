@@ -47,7 +47,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
 
     public String generateShortUrl(UrlRequestDTO url) {
         String originalUrl = url.url();
-        String prefix = originalUrl.length() > 10 ? originalUrl.substring(0, 10) : originalUrl;
+        String prefix = originalUrl.length() > 20 ? originalUrl.substring(0, 20) : originalUrl;
         return prefix + "dsena7";
     }
 }
